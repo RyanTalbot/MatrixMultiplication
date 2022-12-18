@@ -20,32 +20,6 @@ int matrixB[64];
 int matrixC[64];
 int aa[MATRIXSIZE], cc[MATRIXSIZE];
 
-// Methods needed for brief, created but not implemented.
-void printMatrix(int** matrix, int n) {
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            printf("%d ", matrix[i][j]);
-        }
-        printf("\n");
-    }
-}
-
-int dotProduct(int* rowA, int* colB, int n) {
-    int result = 0;
-    for (int i = 0; i < n; i++) {
-        result += rowA[i] * colB[i];
-    }
-    return result;
-}
-
-void multiplyStripe(int** stripeA, int** matrixB, int** stripeC, int n) {
-    for (int i = 0; i < n; i++) {
-        for (int j = 0; j < n; j++) {
-            stripeC[i][j] = dotProduct(stripeA[i], matrixB[j], n);
-        }
-    }
-}
-
 // Modified helper files
 void generateMatrixFile() {
     // generate a matrix of values that need to be written to disk in the form of a one dimensional array
@@ -109,6 +83,34 @@ void readMatrix() {
     for(int j = 0; j<msq; j++){
         cout << matrixB[j] << " ";
         if ((j+1)% MATRIXSIZE == 0) cout << endl;
+    }
+}
+
+// Methods needed for brief, created but not implemented.
+// https://stackoverflow.com/a/14166417/12164665
+void printMatrix(int** matrix, int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            printf("%d ", matrix[i][j]);
+        }
+        printf("\n");
+    }
+}
+
+// https://www.geeksforgeeks.org/program-dot-product-cross-product-two-vector/
+int dotProduct(int* rowA, int* colB, int n) {
+    int product = 0;
+    for (int i = 0; i < n; i++) {
+        product += rowA[i] * colB[i];
+    }
+    return product;
+}
+
+void multiplyStripe(int** stripeA, int** matrixB, int** stripeC, int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            stripeC[i][j] = dotProduct(stripeA[i], matrixB[j], n);
+        }
     }
 }
 
