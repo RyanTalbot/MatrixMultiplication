@@ -1,6 +1,5 @@
-// BSC4-DS Assignment 03 - Matrix Helper File
-// Use this file to generate two matrices (A and B) to be multiplied
-// in parallel in your assignment03
+// BSC4-DS Assignment 03
+// Ryan Talbot - 3001508
 
 #include <stdio.h>
 using namespace std;
@@ -10,145 +9,173 @@ using namespace std;
 #include <mpi.h>
 #pragma warning(disable : 4996) //Blocks C4996 warning which is caused by FILE fopen function
 
-// Can change matrix size to create any size square matrix
-// #define MATRIXSIZE 8
-// int msq = MATRIXSIZE * MATRIXSIZE;
-//
-// #define MATRIXA "matA.dat"
-// #define MATRIXB "matB.dat"
-//
-//int matrixA[MATRIXSIZE][MATRIXSIZE];
-//int matrixB[MATRIXSIZE][MATRIXSIZE];
-//int matrixC[MATRIXSIZE][MATRIXSIZE];
-//int aa[8],cc[8];
+#define MATRIXA "matA.dat"
+#define MATRIXB "matB.dat"
 
-// void readMatrix() {
-//     cout << MATRIXA << " and " << MATRIXB << " created:" << endl;
-//     
-//     FILE *inputA = fopen(MATRIXA, "r");
-//     FILE *inputB = fopen(MATRIXB, "r");
-//     
-//     if (!inputA || !inputB) {
-//         cout << "No file found to read called " << MATRIXA << " or " << MATRIXB << endl;
-//         return;
-//     }
-//     // read the file and store into matrix array
-//     fread(matrixA, sizeof(int), msq, inputA);
-//     fclose(inputA);
-//     
-//     fread(matrixB, sizeof(int), msq, inputB);
-//     fclose(inputB);
-//     
-//     // iterate through the array to print
-//     // for(int i = 0; i<msq; i++){
-//     //     cout << matrixA[i][j] << " ";
-//     //     if ((i+1)% MATRIXSIZE == 0) cout << endl;
-//     // }
-//     //
-//     // cout << "---" << endl;
-//     //
-//     // for(int j = 0; j < msq; j++) {
-//     //     cout << matrixB[j] << " ";
-//     //     if ((j+1)% MATRIXSIZE == 0) cout << endl;
-//     // }
-// }
-//
-//
-// // function that generates a matrix in binary form on disk
-// void generateMatrixFile() {
-//     // generate a matrix of values that need to be written to disk in the form of a one dimensional array
-//     // this will write out an NxN matrix (default size 8x8)
-//     int matrix_A[8][8];
-//     int matrix_B[8][8];
-//     
-//     srand(time(NULL));
-//     
-//     // get random numbers for the matrix
-//     for (int i = 0; i < msq; i++){
-//         for (int j = 0; j < msq; j++) {
-//             matrix_A[i][j] = rand() % 10;
-//             matrix_B[j][i] = rand() % 10;
-//         }
-//     }
-//     
-//     // open up a file for writing
-//     FILE *outputA = fopen(MATRIXA, "wb");
-//     FILE *outputB = fopen(MATRIXB, "wb");
-//     
-//     if (!outputA || !outputB) {
-//         cout << "File " << MATRIXA << " or " << MATRIXB << " not found." << endl;
-//         return;
-//     }
-//     
-//     // do a simple fwrite to write the matrix to file
-//     fwrite(matrix_A, sizeof(int), msq, outputA);
-//     fwrite(matrix_B, sizeof(int), msq, outputB);
-//     
-//     // close the file when we are finished writing
-//     fclose(outputA);
-//     fclose(outputB);
-//     
-//     // read the saved file and print to screen
-//     //readMatrix();
-// }
+#define MATRIXSIZE 8
 
-void print_results(char *prompt, int a[8][8])
-{
-    int i, j;
+int msq = MATRIXSIZE * MATRIXSIZE;
+int matrixA[64];
+int matrixB[64];
+int matrixC[64];
+int aa[MATRIXSIZE], cc[MATRIXSIZE];
 
-    printf ("\n\n%s\n", prompt);
-    for (i = 0; i < 8; i++) {
-            for (j = 0; j < 8; j++) {
-                    printf(" %d", a[i][j]);
-            }
-            printf ("\n");
+// Methods needed for brief, created but not implemented.
+void printMatrix(int** matrix, int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            printf("%d ", matrix[i][j]);
+        }
+        printf("\n");
     }
-    printf ("\n\n");
 }
 
-// the main function of the program
+int dotProduct(int* rowA, int* colB, int n) {
+    int result = 0;
+    for (int i = 0; i < n; i++) {
+        result += rowA[i] * colB[i];
+    }
+    return result;
+}
+
+void multiplyStripe(int** stripeA, int** matrixB, int** stripeC, int n) {
+    for (int i = 0; i < n; i++) {
+        for (int j = 0; j < n; j++) {
+            stripeC[i][j] = dotProduct(stripeA[i], matrixB[j], n);
+        }
+    }
+}
+
+// Modified helper files
+void generateMatrixFile() {
+    // generate a matrix of values that need to be written to disk in the form of a one dimensional array
+    //this will write out an NxN matrix (default size 8x8)
+    srand(time(NULL));
+    
+    // get random numbers for the matrix
+    for (int i = 0; i < msq; i++){
+        matrixA[i] = rand() % 10;
+        matrixB[i] = rand() % 10;
+    }
+    
+    // do a simple fwrite to write the matrix to file
+    // close the file when we are finished writing
+    FILE *outputA = fopen(MATRIXA, "wb");
+    if (!outputA) {
+        cout << "File " << MATRIXA << " not found." << endl;
+        return;
+    }
+    fwrite(matrixA, sizeof(int), msq, outputA);
+    fclose(outputA);
+    
+    FILE *outputB = fopen(MATRIXB, "wb");
+    if (!outputB) {
+        cout << "File " << MATRIXB << " not found." << endl;
+        return;
+    }
+    fwrite(matrixB, sizeof(int), msq, outputB);
+    fclose(outputB);
+}
+
+void readMatrix() {
+    cout << MATRIXA << " and "  << MATRIXB << " created:" << endl;
+    int matrixA[msq];
+    int matrixB[msq];
+
+    FILE *inputA = fopen(MATRIXA, "r");
+    if (!inputA) {
+        cout << "No file found to read called " << MATRIXA << endl;
+        return;
+    }
+    fread(matrixA, sizeof(int), msq, inputA);
+    fclose(inputA);
+    
+    FILE *inputB = fopen(MATRIXB, "r");
+    if (!inputB) {
+        cout << "No file found to read called " << MATRIXB << endl;
+        return;
+    }
+    fread(matrixB, sizeof(int), msq, inputB);
+    fclose(inputB);
+    
+    // iterate through the array to print
+    for(int i = 0; i<msq; i++){
+        cout << matrixA[i] << " ";
+        if ((i+1)% MATRIXSIZE == 0) cout << endl;
+    }
+
+    cout << "---" << endl;
+
+    for(int j = 0; j<msq; j++){
+        cout << matrixB[j] << " ";
+        if ((j+1)% MATRIXSIZE == 0) cout << endl;
+    }
+}
+
+void coordinator(int world_size) {
+    readMatrix();
+}
+
+void participant(int world_rank, int world_size) {
+    // cout << world_rank << endl;
+}
+
 int main(int argc, char** argv) {
-    //generateMatrixFile();
-
-    int matrixA[8][8] = {{1,2,3,4,1,6,7,3},{5,6,7,8,2,6,7,6},{9,1,2,3,7,3,2,6},{4,5,6,7,4,1,4,5},{1,2,3,4,1,6,7,3},{5,6,7,8,2,6,7,6},{9,1,2,3,7,3,2,6},{4,5,6,7,4,1,4,5}};
-    int matrixB[8][8] = {{1,2,3,4,1,6,7,3},{5,6,7,8,2,6,7,6},{9,1,2,3,7,3,2,6},{4,5,6,7,4,1,4,5},{1,2,3,4,1,6,7,3},{5,6,7,8,2,6,7,6},{9,1,2,3,7,3,2,6},{4,5,6,7,4,1,4,5}};
-    int matrixC[8][8];
-    int aa[8], cc[8];
-
-    int world_size, world_rank;
-
+    // MPI vars and setup
+    int world_rank, world_size;
     int sum = 0;
 
     MPI_Init(NULL, NULL);
-    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
- 
-    //scatter rows of first matrix to different processes     
-    MPI_Scatter(matrixA, 8*8/world_size, MPI_INT, aa, 8*8/world_size, MPI_INT,0,MPI_COMM_WORLD);
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
 
-    //broadcast second matrix to all processes
-    MPI_Bcast(matrixB, 8*8, MPI_INT, 0, MPI_COMM_WORLD);
+    // Ensuring required args
+    if (argc != 4) {
+        printf("This application requires 4 args.\n");
+        MPI_Abort(MPI_COMM_WORLD, EXIT_FAILURE);
+    } else {
+        if (world_rank == 0) {
+            printf("Matrices present along with correct args, starting computation.\n");
+        }
+    }
+
+    generateMatrixFile();
+
+    if (world_rank == 0) {
+        coordinator(world_size);
+    } else {
+        participant(world_rank, world_size); 
+    }
+
+    // Scatter rows of first matrix to procs
+    MPI_Scatter(matrixA, msq / world_size, MPI_INT, aa, msq / world_size, MPI_INT , 0 , MPI_COMM_WORLD);
+    // Broadcast second matrix to all procs
+    MPI_Bcast(matrixB, msq, MPI_INT, 0, MPI_COMM_WORLD);
 
     MPI_Barrier(MPI_COMM_WORLD);
+  
+    // Do multiplication
+    for (int i = 0; i < MATRIXSIZE; i++) {
+        for (int j = 0; j < MATRIXSIZE; j++) {
+            sum = sum + aa[j] * matrixB[j];
+        }
+        cc[i] = sum;
+        sum = 0;
+    }
 
-          //perform vector multiplication by all processes
-          for (int i = 0; i < 8; i++)
-            {
-                    for (int j = 0; j < 8; j++)
-                    {
-                            sum = sum + aa[j] * matrixB[j][i];  //MISTAKE_WAS_HERE               
-                    }
-                    cc[i] = sum;
-                    sum = 0;
-            }
+    MPI_Gather(cc, msq / world_size, MPI_INT, matrixC, msq / world_size, MPI_INT, 0, MPI_COMM_WORLD);
+        
+    MPI_Barrier(MPI_COMM_WORLD);
 
-    MPI_Gather(cc, 8*8/world_size, MPI_INT, matrixC, 8*8/world_size, MPI_INT, 0, MPI_COMM_WORLD);
+    // Print result
+    if (world_rank == 0) {
+        cout << "\nResult:\n" << endl;
+        for(int i = 0; i < msq; i++){
+            cout << matrixC[i] << " ";
+            if ((i+1)% MATRIXSIZE == 0) cout << endl;
+        }
+    }
 
-    MPI_Barrier(MPI_COMM_WORLD);        
-    MPI_Finalize();
-
-    if (world_rank == 0)                         //I_ADDED_THIS
-        print_results("C = ", matrixC);
-
-    return 0;
+    return MPI_Finalize();
 }
+
